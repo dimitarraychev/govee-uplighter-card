@@ -6,7 +6,7 @@
  */
 const TAG = "govee-uplighter-card";
 const EDITOR_TAG = "govee-uplighter-card-editor";
-const CARD_VERSION = "0.2.0-beta";
+const CARD_VERSION = "0.2.1-beta";
 
 const OFF_RGB = "142,142,147";
 const WARM_RGB = "255,193,7";
@@ -113,7 +113,8 @@ const rgbToHex = (rgb) => "#" + String(rgb).split(",").map((n) => Math.max(0, Ma
 const segIcon = (key) => (SEGMENT_ICONS.find(([k]) => String(key).toLowerCase().includes(k)) || [0, "mdi:led-strip-variant"])[1];
 
 // ---------- sections ----------
-// Sections can be shown, hidden and reordered. `sections` in the config is an
+// The header is pinned on top, it can only be shown or hidden. The other
+// sections can be shown, hidden and reordered. `sections` in the config is an
 // ordered list of ids; hide one with `- id: music` + `show: false`. Sections
 // that are not listed are hidden. Without `sections` the old show_* keys apply.
 const SECTION_IDS = ["header", "brightness", "color", "segments", "scenes", "music"];
@@ -136,7 +137,8 @@ function effectiveSections(cfg) {
       out.push({ id: o.id, show: o.show !== false });
     });
     SECTION_IDS.forEach((id) => { if (!seen.has(id)) out.push({ id, show: false }); });
-    return out;
+    // the header always stays on top
+    return [out.find((x) => x.id === "header"), ...out.filter((x) => x.id !== "header")];
   }
   return SECTION_IDS.map((id) => ({ id, show: cfg[`show_${id}`] !== false }));
 }
@@ -824,7 +826,7 @@ class GoveeUplighterCard extends HTMLElement {
     const els = { header: this._head, brightness: this._bri, color: this._col, segments: this._sgm, scenes: this._scn, music: this._mus };
     SECTION_IDS.forEach((id) => {
       const i = sections.indexOf(id);
-      els[id].style.order = i < 0 ? 99 : i;
+      els[id].style.order = id === "header" ? -1 : i < 0 ? 99 : i;
     });
     this._name.textContent = m.name;
     if (m.missing) {
@@ -1083,6 +1085,7 @@ const EDITOR_CSS = `
   .gu-body { padding: 12px; border-top: 1px solid var(--divider-color); }
   .gu-add { all: unset; box-sizing: border-box; cursor: pointer; width: 100%; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 10px; border: 1px dashed var(--divider-color); border-radius: 12px; color: var(--primary-color); font-size: 14px; font-weight: 500; --mdc-icon-size: 20px; }
   .gu-add:hover { background: var(--secondary-background-color); }
+  .gu-pin { width: 68px; height: 32px; flex: none; display: flex; align-items: center; justify-content: center; color: var(--secondary-text-color); --mdc-icon-size: 18px; }
   .gu-tgl { all: unset; box-sizing: border-box; cursor: pointer; flex: none; position: relative; width: 38px; height: 22px; border-radius: 11px; margin: 0 8px 0 4px; background: var(--disabled-color, #bdbdbd); transition: background .2s; }
   .gu-tgl::after { content: ""; position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; border-radius: 50%; background: #fff; transition: transform .2s; box-shadow: 0 1px 3px rgba(0,0,0,.35); }
   .gu-tgl.on { background: var(--primary-color); }
@@ -1240,6 +1243,7 @@ class SectionsEditor {
     wrap.appendChild(head);
     list.forEach((it, i) => {
       const meta = SECTION_META[it.id];
+      const pinned = it.id === "header";
       const row = document.createElement("div");
       row.className = "gu-row" + (it.show ? "" : " hidden-sec");
       const rh = document.createElement("div");
@@ -1248,11 +1252,15 @@ class SectionsEditor {
       rh.innerHTML = `
         <ha-icon icon="${meta.icon}"></ha-icon>
         <div class="t"><div class="n"></div><div class="s"></div></div>
-        <button class="gu-ib" data-a="up" title="Move up" ${i === 0 ? "disabled" : ""}><ha-icon icon="mdi:arrow-up"></ha-icon></button>
-        <button class="gu-ib" data-a="down" title="Move down" ${i === list.length - 1 ? "disabled" : ""}><ha-icon icon="mdi:arrow-down"></ha-icon></button>
+        ${
+          pinned
+            ? `<span class="gu-pin" title="The header always stays on top"><ha-icon icon="mdi:pin-outline"></ha-icon></span>`
+            : `<button class="gu-ib" data-a="up" title="Move up" ${i <= 1 ? "disabled" : ""}><ha-icon icon="mdi:arrow-up"></ha-icon></button>
+               <button class="gu-ib" data-a="down" title="Move down" ${i === list.length - 1 ? "disabled" : ""}><ha-icon icon="mdi:arrow-down"></ha-icon></button>`
+        }
         <button class="gu-tgl${it.show ? " on" : ""}" data-a="tgl" role="switch" aria-checked="${it.show}" title="${it.show ? "Hide" : "Show"}"></button>`;
       rh.querySelector(".n").textContent = meta.label;
-      rh.querySelector(".s").textContent = it.show ? "Shown" : "Hidden";
+      rh.querySelector(".s").textContent = pinned ? (it.show ? "Shown, always on top" : "Hidden") : it.show ? "Shown" : "Hidden";
       rh.addEventListener("click", (e) => {
         const a = e.target.closest("[data-a]")?.dataset.a;
         if (!a) return;
@@ -1260,7 +1268,7 @@ class SectionsEditor {
         if (a === "tgl") cur[i].show = !cur[i].show;
         else {
           const j = a === "up" ? i - 1 : i + 1;
-          if (j < 0 || j >= cur.length) return;
+          if (j < 1 || j >= cur.length) return; // never above the header
           [cur[i], cur[j]] = [cur[j], cur[i]];
         }
         this.commit(cur);

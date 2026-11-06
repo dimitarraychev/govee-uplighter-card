@@ -6,7 +6,7 @@
  */
 const TAG = "govee-uplighter-card";
 const EDITOR_TAG = "govee-uplighter-card-editor";
-const CARD_VERSION = "0.1.0-beta";
+const CARD_VERSION = "0.2.0-beta";
 
 const OFF_RGB = "142,142,147";
 const WARM_RGB = "255,193,7";
@@ -15,11 +15,71 @@ const UNAVAILABLE = ["unavailable", "unknown"];
 const COLOR_MODES = ["hs", "xy", "rgb", "rgbw", "rgbww"];
 
 const DEFAULT_COLORS = ["#ff3b30", "#ff9500", "#ffcc00", "#34c759", "#00c7be", "#007aff", "#af52de", "#ff2d92", "#ffffff"];
+// Default highlight color per scene (the "Govee Effect Color Map"), as [r, g, b].
+// A color set on a scene in the card config always wins over this map.
+const SCENE_COLOR_MAP = {
+  "Sleep": [255, 145, 15], "Dracarys": [255, 69, 0], "Green Reign": [76, 175, 80],
+  "Fire & Blood": [183, 28, 28], "Fire": [255, 87, 34], "Venus": [255, 150, 40],
+  "Neptune": [30, 60, 200], "Earth B": [46, 139, 87], "Nebula": [156, 39, 176],
+  "Starry Sky": [25, 25, 112], "Meteor": [255, 140, 0], "Milky Way": [75, 0, 130],
+  "Space Walk": [0, 31, 63], "Cosmic Echoes": [138, 43, 226], "Interstellar Voyage": [63, 81, 181],
+  "Vast Cosmos": [48, 25, 52], "Mercury": [169, 169, 169], "Earth": [65, 105, 225],
+  "Mars": [193, 68, 14], "Jupiter": [222, 184, 135], "Saturn": [238, 220, 130],
+  "Uranus": [127, 255, 212], "Dusk": [255, 94, 77], "Desert": [255, 128, 0],
+  "Star": [255, 255, 224], "Water Drop": [135, 206, 250], "Sunset": [255, 99, 71],
+  "Sunrise": [255, 193, 7], "Aurora": [0, 255, 170], "Aurora B": [0, 230, 190],
+  "Aurora C": [0, 210, 210], "Aurora D": [0, 190, 230], "Sunny": [255, 215, 0],
+  "Forest": [34, 139, 34], "Ocean": [0, 119, 190], "Sunset Glow": [255, 87, 34],
+  "Rainbow": [216, 27, 96], "Cornfield": [255, 104, 0], "Glacier": [176, 224, 230],
+  "Bonfire": [255, 87, 34], "Stream": [100, 181, 246], "Cherry blossoms": [255, 183, 197],
+  "Waterfall": [33, 150, 243], "Firefly": [255, 235, 59], "Snowing": [224, 247, 250],
+  "Moonlight": [197, 202, 233], "Ghost": [178, 223, 219], "Christmas B": [211, 47, 47],
+  "Halloween B": [255, 111, 0], "Heartbeat": [229, 57, 53], "New Years": [255, 215, 0],
+  "Christmas": [211, 47, 47], "Candy Cane": [211, 47, 47], "Candy Cane B": [211, 47, 47],
+  "Christmas Bell": [198, 40, 40], "Halloween": [255, 111, 0], "Graveyard": [69, 90, 100],
+  "Easter": [186, 104, 200], "Easter Egg": [186, 104, 200], "Thanksgiving": [230, 126, 34],
+  "Carnival": [233, 30, 99], "Valentine's Day": [233, 30, 99], "Father's Day": [33, 150, 243],
+  "Mother's Day": [244, 143, 177], "Saint Patrick's Day": [67, 160, 71], "Birthday": [33, 150, 243],
+  "Family Day": [255, 202, 58], "Party": [216, 27, 96], "Dance Party": [171, 71, 188],
+  "Candlelight": [255, 152, 0], "Mother's Hug": [244, 143, 177], "White Light": [255, 244, 229],
+  "Leisure": [0, 150, 136], "Soothing": [129, 212, 250], "Mysterious": [74, 20, 140],
+  "Healing": [38, 166, 154], "Peaceful": [144, 202, 249], "Spritual": [149, 117, 205],
+  "Joyful": [255, 235, 59], "Meditation": [179, 157, 219], "Dreamland": [206, 147, 216],
+  "Gradient": [0, 172, 193], "Breathe": [100, 181, 246], "Twinkle": [255, 249, 196],
+  "Graffiti": [233, 30, 99], "Flow": [3, 169, 244], "Alternate": [158, 158, 158],
+  "Gleam": [255, 193, 7], "Cover": [117, 117, 117], "Colorful": [216, 27, 96],
+  "Crossing": [0, 150, 136], "Yoga": [129, 199, 132], "Colorful Clouds": [206, 147, 216],
+  "Moonlight Sprinkles": [197, 202, 233], "Floating Mist": [144, 164, 174], "Radiance": [255, 202, 40],
+  "Wheat Wave": [255, 163, 51], "Mild": [255, 241, 224], "Refreshing": [0, 191, 165],
+  "Clear Sky": [79, 195, 247], "Moonlit Night": [26, 35, 126], "Fascination": [186, 104, 200],
+  "Spring Tour": [174, 213, 129], "Dreamlike": [179, 157, 219], "Blue Sky & White Clouds": [100, 181, 246],
+  "Dense fog": [176, 190, 197], "Flash": [255, 255, 255], "Gary": [158, 158, 158],
+  "Judy": [240, 98, 146], "Nick": [66, 133, 244], "ZDP Duo": [149, 117, 205],
+  "ZDP Trio": [149, 117, 205], "Wave": [3, 155, 229], "Snow flake": [224, 247, 250],
+  "Spring Wind": [174, 213, 129], "Sky": [79, 195, 247], "Falling Petals": [255, 183, 197],
+  "Raining": [96, 125, 139], "Karst Cave": [69, 90, 100], "Mountain Forest": [27, 94, 32],
+  "Feather": [236, 239, 241], "Spring": [174, 213, 129], "Summer": [255, 202, 40],
+  "Fall": [230, 126, 34], "Winter": [178, 235, 242], "Lake": [0, 105, 146],
+  "Reading": [255, 224, 178], "Night Light": [92, 107, 192], "Morning": [255, 213, 79],
+  "Afternoon": [255, 179, 0], "Fish tank": [0, 172, 193], "Goldfish": [255, 152, 0],
+  "Train": [96, 125, 139], "Kitchen Aromas": [255, 183, 77], "Smudge": [141, 110, 99],
+  "Rubik's Cube": [216, 27, 96], "Interlaced": [3, 169, 244], "Swing": [255, 202, 40],
+  "Pumpkin Spice": [230, 126, 34], "Christmas Baubles": [211, 47, 47], "Christmas Eve": [26, 35, 126],
+  "Santa Hat": [211, 47, 47], "Christmas Stripe": [211, 47, 47], "Christmas Stripe B": [67, 160, 71],
+  "Christmas Stripe C": [255, 215, 0], "Christmas Stripe D": [211, 47, 47], "Christmas Gift": [211, 47, 47],
+  "Christmas Wreath": [67, 160, 71], "Snow House": [224, 247, 250], "Christmas Tree": [67, 160, 71],
+  "Gingerbread Man": [141, 110, 99], "Christmas Stocking": [211, 47, 47], "Santa Claus": [211, 47, 47],
+  "Grim Graveyard": [69, 90, 100], "Poison": [124, 179, 66], "Lightning Bats": [69, 90, 100],
+  "Halloween Witches": [106, 27, 154], "Accompany": [255, 202, 40], "Night": [26, 35, 126],
+};
+const SCENE_COLORS = Object.fromEntries(
+  Object.entries(SCENE_COLOR_MAP).map(([k, v]) => [k.toLowerCase(), v.join(",")])
+);
 const DEFAULT_SCENES = [
-  { option: "Sleep", icon: "mdi:power-sleep", color: "63,81,181" },
-  { option: "Cornfield", icon: "mdi:corn", color: "255,193,7" },
-  { option: "Desert", icon: "mdi:island", color: "76,175,80" },
-  { option: "Venus", icon: "mdi:orbit", color: "255,87,34" },
+  { option: "Sleep", icon: "mdi:power-sleep" },
+  { option: "Cornfield", icon: "mdi:corn" },
+  { option: "Desert", icon: "mdi:island" },
+  { option: "Venus", icon: "mdi:orbit" },
 ];
 const SEGMENT_ICONS = [
   ["ripple", "mdi:waves"],
@@ -51,6 +111,36 @@ const toRgb = (c) => {
 };
 const rgbToHex = (rgb) => "#" + String(rgb).split(",").map((n) => Math.max(0, Math.min(255, Number(n))).toString(16).padStart(2, "0")).join("");
 const segIcon = (key) => (SEGMENT_ICONS.find(([k]) => String(key).toLowerCase().includes(k)) || [0, "mdi:led-strip-variant"])[1];
+
+// ---------- sections ----------
+// Sections can be shown, hidden and reordered. `sections` in the config is an
+// ordered list of ids; hide one with `- id: music` + `show: false`. Sections
+// that are not listed are hidden. Without `sections` the old show_* keys apply.
+const SECTION_IDS = ["header", "brightness", "color", "segments", "scenes", "music"];
+const SECTION_META = {
+  header: { icon: "mdi:page-layout-header", label: "Header" },
+  brightness: { icon: "mdi:brightness-6", label: "Brightness" },
+  color: { icon: "mdi:palette", label: "Colors and white temperature" },
+  segments: { icon: "mdi:led-strip-variant", label: "Light segments" },
+  scenes: { icon: "mdi:auto-fix", label: "Scenes" },
+  music: { icon: "mdi:music", label: "Music mode" },
+};
+function effectiveSections(cfg) {
+  if (Array.isArray(cfg.sections)) {
+    const seen = new Set();
+    const out = [];
+    cfg.sections.forEach((x) => {
+      const o = typeof x === "string" ? { id: x } : x;
+      if (!o || !SECTION_IDS.includes(o.id) || seen.has(o.id)) return;
+      seen.add(o.id);
+      out.push({ id: o.id, show: o.show !== false });
+    });
+    SECTION_IDS.forEach((id) => { if (!seen.has(id)) out.push({ id, show: false }); });
+    return out;
+  }
+  return SECTION_IDS.map((id) => ({ id, show: cfg[`show_${id}`] !== false }));
+}
+const resolveSections = (cfg) => effectiveSections(cfg).filter((x) => x.show).map((x) => x.id);
 
 // ---------- entity discovery ----------
 // The Govee entities share the light's name: light.<base>, switch.<base>_ripple_light,
@@ -159,20 +249,23 @@ class GoveeUplighterCard extends HTMLElement {
         .stitle b { font-weight: 600; letter-spacing: 0; text-transform: none; font-size: 13px; color: var(--primary-text-color); font-variant-numeric: tabular-nums; }
         .stitle.sm { margin-top: 2px; }
 
-        /* ---- sliders ---- */
+        /* ---- sliders (custom, so dragging works on iOS) ---- */
         .slider {
-          --pct: 0%; -webkit-appearance: none; appearance: none; width: 100%; height: 34px; margin: 0; border-radius: 17px;
-          cursor: pointer; outline: none; touch-action: pan-y; display: block;
-          background: linear-gradient(to right, rgba(var(--fill, var(--rgb)), .85) var(--pct), color-mix(in srgb, var(--primary-text-color) 10%, transparent) var(--pct));
+          --pct: 0%; position: relative; height: 34px; border-radius: 17px; cursor: pointer; outline: none;
+          touch-action: pan-y; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent;
+          background: linear-gradient(to right, rgba(var(--fill, var(--rgb)), .85) var(--pct), color-mix(in srgb, var(--primary-text-color) 16%, transparent) var(--pct));
+          box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary-text-color) 10%, transparent);
         }
-        .slider::-webkit-slider-runnable-track { height: 34px; background: transparent; }
-        .slider::-webkit-slider-thumb { -webkit-appearance: none; width: 0; height: 34px; }
-        .slider::-moz-range-track { height: 34px; background: transparent; }
-        .slider::-moz-range-thumb { width: 0; height: 34px; border: none; }
+        .slider .thumb {
+          position: absolute; top: 8px; bottom: 8px; width: 4px; border-radius: 2px; background: #fff; pointer-events: none;
+          left: clamp(8px, calc(var(--pct) - 10px), calc(100% - 12px)); box-shadow: 0 0 3px rgba(0,0,0,.45);
+        }
         .slider.ct { background: linear-gradient(to right, #ff9d3a, #fff3e0 50%, #a8d0ff); }
-        .slider.ct::-webkit-slider-thumb { width: 8px; height: 34px; border-radius: 4px; background: #fff; box-shadow: 0 0 0 2px rgba(0,0,0,.35); }
-        .slider.ct::-moz-range-thumb { width: 8px; height: 34px; border-radius: 4px; background: #fff; box-shadow: 0 0 0 2px rgba(0,0,0,.35); }
-        .slider[disabled] { opacity: .4; pointer-events: none; }
+        .slider.ct .thumb {
+          top: 0; bottom: 0; width: 8px; border-radius: 4px; left: clamp(0px, calc(var(--pct) - 4px), calc(100% - 8px));
+          box-shadow: 0 0 0 2px rgba(0,0,0,.35);
+        }
+        ha-card.kbd .slider:focus-visible { outline: 2px solid rgb(var(--rgb)); outline-offset: 2px; }
 
         /* ---- color swatches ---- */
         .swatches { display: flex; flex-wrap: wrap; gap: 8px; }
@@ -235,7 +328,7 @@ class GoveeUplighterCard extends HTMLElement {
           transition: background .2s, color .2s, box-shadow .2s; -webkit-tap-highlight-color: transparent;
         }
         .chip.active { color: rgb(${MUSIC_RGB}); background: rgba(${MUSIC_RGB}, .2); box-shadow: inset 0 0 0 1px rgba(${MUSIC_RGB}, .45); }
-        .mus.dim .chips, .mus.dim .slider { opacity: .55; }
+        .mus.dim .chips, .mus.dim .slider { opacity: .6; }
 
         /* ---------- Bubble Card style ---------- */
         ha-card.bubble, ha-card.bubble:not(.off) {
@@ -260,7 +353,7 @@ class GoveeUplighterCard extends HTMLElement {
 
         <div class="sec bri" hidden>
           <div class="stitle"><ha-icon icon="mdi:brightness-6"></ha-icon><span>Brightness</span><b class="val"></b></div>
-          <input class="slider" type="range" min="1" max="100" step="1" aria-label="Brightness" />
+          <div class="slider" role="slider" tabindex="0" aria-label="Brightness"><div class="thumb"></div></div>
         </div>
 
         <div class="sec col" hidden>
@@ -268,7 +361,7 @@ class GoveeUplighterCard extends HTMLElement {
           <div class="swatches"></div>
           <div class="ctwrap" hidden>
             <div class="stitle sm"><ha-icon icon="mdi:thermometer"></ha-icon><span>White temperature</span><b class="val"></b></div>
-            <input class="slider ct" type="range" min="2000" max="9000" step="100" aria-label="White temperature" />
+            <div class="slider ct" role="slider" tabindex="0" aria-label="White temperature"><div class="thumb"></div></div>
           </div>
         </div>
 
@@ -288,7 +381,7 @@ class GoveeUplighterCard extends HTMLElement {
           <div class="chips"></div>
           <div class="sens">
             <div class="stitle sm"><ha-icon icon="mdi:tune-vertical"></ha-icon><span>Sensitivity</span><b class="val"></b></div>
-            <input class="slider" type="range" style="--fill:${MUSIC_RGB}" aria-label="Music sensitivity" />
+            <div class="slider" role="slider" tabindex="0" style="--fill:${MUSIC_RGB}" aria-label="Music sensitivity"><div class="thumb"></div></div>
           </div>
         </div>
       </ha-card>`;
@@ -391,12 +484,6 @@ class GoveeUplighterCard extends HTMLElement {
   setConfig(config) {
     if (!config || !config.entity) throw new Error("You need to define a light entity");
     this._config = {
-      show_header: true,
-      show_brightness: true,
-      show_color: true,
-      show_segments: true,
-      show_scenes: true,
-      show_music: true,
       tap_action: { action: "more-info" },
       ...config,
     };
@@ -410,14 +497,9 @@ class GoveeUplighterCard extends HTMLElement {
   }
 
   getCardSize() {
-    const c = this._config || {};
-    let n = c.show_header !== false ? 1 : 0;
-    if (c.show_brightness !== false) n += 1;
-    if (c.show_color !== false) n += 1;
-    if (c.show_segments !== false) n += 1;
-    if (c.show_scenes !== false) n += 2;
-    if (c.show_music !== false) n += 2;
-    return Math.max(n, 1);
+    const vis = resolveSections(this._config || {});
+    const size = { header: 1, brightness: 1, color: 1, segments: 1, scenes: 2, music: 2 };
+    return Math.max(vis.reduce((n, id) => n + size[id], 0), 1);
   }
   getGridOptions() { return { columns: 12, min_columns: 4 }; }
 
@@ -457,7 +539,13 @@ class GoveeUplighterCard extends HTMLElement {
     return list
       .map((s) => (typeof s === "string" ? { option: s } : s))
       .filter((s) => s && s.option)
-      .map((s) => ({ option: s.option, name: s.name || s.option, icon: s.icon || "mdi:palette", rgb: toRgb(s.color) }));
+      .map((s) => ({
+        option: s.option,
+        name: s.name || s.option,
+        icon: s.icon || "mdi:palette",
+        // configured color first, then the Govee color map
+        rgb: toRgb(s.color) || SCENE_COLORS[baseName(s.option)] || null,
+      }));
   }
 
   _colorList() {
@@ -478,30 +566,88 @@ class GoveeUplighterCard extends HTMLElement {
     this._pendTimer = setTimeout(() => { this._key = null; this._render(); }, 3100);
   }
 
+  // Pointer based slider. Native range inputs can only be dragged by their thumb on iOS,
+  // so this handles taps and drags anywhere on the track. Vertical swipes still scroll the page.
   _wireSlider(el, key, valEl, fmt, send) {
-    const pct = () => `${((Number(el.value) - Number(el.min)) / Math.max(Number(el.max) - Number(el.min), 1)) * 100}%`;
-    el.addEventListener("pointerdown", () => { this._drag = key; });
-    ["pointerup", "pointercancel", "blur"].forEach((ev) => el.addEventListener(ev, () => { if (this._drag === key) this._drag = null; }));
-    el.addEventListener("input", () => {
-      const v = Number(el.value);
-      el.style.setProperty("--pct", pct());
+    const calc = (clientX) => {
+      const r = el.getBoundingClientRect();
+      const { _min: min, _max: max } = el;
+      const step = el._step || 1;
+      const ratio = r.width ? Math.min(1, Math.max(0, (clientX - r.left) / r.width)) : 0;
+      let v = Math.round((min + ratio * (max - min) - min) / step) * step + min;
+      v = Math.min(max, Math.max(min, v));
+      const dec = String(step).includes(".") ? String(step).split(".")[1].length : 0;
+      return Number(v.toFixed(dec));
+    };
+    const show = (v) => {
+      el._v = v;
+      this._paintSlider(el);
       valEl.textContent = fmt(v);
       this._setPend(key, v);
+    };
+    const live = (v) => {
+      show(v);
       const now = Date.now();
       if (now - (this._lastSend[key] || 0) > 250) { this._lastSend[key] = now; send(v); }
+    };
+    const commit = (v) => { this._lastSend[key] = Date.now(); show(v); send(v); };
+    let st = null;
+    const stop = () => { if (this._drag === key) this._drag = null; st = null; };
+
+    el.addEventListener("pointerdown", (e) => {
+      if (e.pointerType === "mouse" && e.button !== 0) return;
+      st = { id: e.pointerId, x: e.clientX, y: e.clientY, drag: e.pointerType === "mouse" };
+      this._drag = key;
+      try { el.setPointerCapture(e.pointerId); } catch (err) { /* not supported */ }
+      if (st.drag) live(calc(e.clientX));
     });
-    el.addEventListener("change", () => {
-      const v = Number(el.value);
-      this._lastSend[key] = Date.now();
-      this._setPend(key, v);
-      send(v);
+    el.addEventListener("pointermove", (e) => {
+      if (!st || e.pointerId !== st.id) return;
+      if (!st.drag) {
+        const dx = Math.abs(e.clientX - st.x);
+        if (dx > 6 && dx > Math.abs(e.clientY - st.y)) st.drag = true;
+        else return;
+      }
+      const v = calc(e.clientX);
+      if (v !== el._v) live(v);
+    });
+    el.addEventListener("pointerup", (e) => {
+      if (!st || e.pointerId !== st.id) return;
+      commit(calc(e.clientX)); // a tap sets the value too
+      stop();
+    });
+    el.addEventListener("pointercancel", () => {
+      if (st && st.drag) commit(el._v); // the browser took over (e.g. scroll): keep what was set
+      stop();
+    });
+    el.addEventListener("keydown", (e) => {
+      const step = el._step || 1;
+      const big = Math.max(step, (el._max - el._min) / 10);
+      const d = { ArrowLeft: -step, ArrowDown: -step, ArrowRight: step, ArrowUp: step, PageDown: -big, PageUp: big }[e.key];
+      let v;
+      if (d !== undefined) v = Math.min(el._max, Math.max(el._min, el._v + d));
+      else if (e.key === "Home") v = el._min;
+      else if (e.key === "End") v = el._max;
+      else return;
+      e.preventDefault();
+      show(v);
+      clearTimeout(this._keyTimer);
+      this._keyTimer = setTimeout(() => send(v), 300);
     });
   }
 
+  _paintSlider(el) {
+    const range = Math.max(el._max - el._min, 1);
+    el.style.setProperty("--pct", `${((el._v - el._min) / range) * 100}%`);
+    el.setAttribute("aria-valuemin", el._min);
+    el.setAttribute("aria-valuemax", el._max);
+    el.setAttribute("aria-valuenow", el._v);
+  }
+
   _setSlider(el, key, v, min, max, step) {
-    el.min = min; el.max = max; el.step = step;
-    if (this._drag !== key) el.value = v;
-    el.style.setProperty("--pct", `${((Number(v) - min) / Math.max(max - min, 1)) * 100}%`);
+    el._min = min; el._max = max; el._step = step;
+    if (this._drag !== key || el._v == null) el._v = v;
+    this._paintSlider(el);
   }
 
   _setColor(rgb) {
@@ -594,13 +740,16 @@ class GoveeUplighterCard extends HTMLElement {
     const rgbStr = on && rgbArr ? rgbArr.join(",") : null;
     const nearWhite = rgbArr && rgbArr.every((n) => n > 240);
     const override = toRgb(cfg.color);
-    const accent = override || (on ? (rgbStr && !nearWhite ? rgbStr : WARM_RGB) : OFF_RGB);
-
     const e = this._ents();
     const sceneSt = e.scene && hass.states[e.scene];
     const sceneOptions = sceneSt?.attributes?.options || [];
     const sceneCur = sceneSt && !UNAVAILABLE.includes(sceneSt.state) ? sceneSt.state : "";
     const curBase = baseName(sceneCur);
+    // optionally tint the card with the active scene's color
+    const sceneTint = cfg.scene_accent && sceneCur && curBase !== "none"
+      ? this._sceneList().find((x) => baseName(x.option) === curBase)?.rgb || SCENE_COLORS[curBase] || null
+      : null;
+    const accent = override || (on ? (sceneTint || (rgbStr && !nearWhite ? rgbStr : WARM_RGB)) : OFF_RGB);
 
     const parts = [];
     if (unavailable) parts.push("Unavailable");
@@ -658,10 +807,11 @@ class GoveeUplighterCard extends HTMLElement {
     const m = this._model();
     const bubble = cfg.card_style === "bubble";
     const animate = cfg.animation !== false;
-    const showHeader = cfg.show_header !== false;
+    const sections = resolveSections(cfg);
+    const vis = new Set(sections);
+    const showHeader = vis.has("header");
     const opts = [
-      showHeader, bubble, animate, cfg.show_brightness !== false, cfg.show_color !== false, cfg.show_segments !== false,
-      cfg.show_scenes !== false, cfg.show_music !== false, cfg.show_scene_labels, cfg.show_scene_select !== false,
+      sections, bubble, animate, cfg.show_scene_labels, cfg.show_scene_select !== false,
       cfg.show_random !== false, cfg.show_color_picker !== false,
     ];
     const key = JSON.stringify([m, opts]);
@@ -671,6 +821,11 @@ class GoveeUplighterCard extends HTMLElement {
     this._card.classList.toggle("bubble", bubble);
     this._card.classList.toggle("static", !animate);
     this._head.hidden = !showHeader;
+    const els = { header: this._head, brightness: this._bri, color: this._col, segments: this._sgm, scenes: this._scn, music: this._mus };
+    SECTION_IDS.forEach((id) => {
+      const i = sections.indexOf(id);
+      els[id].style.order = i < 0 ? 99 : i;
+    });
     this._name.textContent = m.name;
     if (m.missing) {
       this._sub.textContent = "Entity not found";
@@ -689,12 +844,12 @@ class GoveeUplighterCard extends HTMLElement {
     this._pwr.disabled = m.unavailable;
 
     // brightness
-    this._bri.hidden = !(cfg.show_brightness !== false && m.hasBri);
+    this._bri.hidden = !(vis.has("brightness") && m.hasBri);
     this._briVal.textContent = m.on || m.bri ? `${m.bri}%` : "Off";
     this._setSlider(this._briSlider, "bri", m.bri || 1, 1, 100, 1);
 
     // color + white temperature
-    const showColor = cfg.show_color !== false && (m.hasColor || m.hasCt);
+    const showColor = vis.has("color") && (m.hasColor || m.hasCt);
     this._col.hidden = !showColor;
     this._sw.hidden = !m.hasColor;
     if (m.hasColor) {
@@ -718,7 +873,7 @@ class GoveeUplighterCard extends HTMLElement {
     }
 
     // segments
-    const showSeg = cfg.show_segments !== false && m.segments.length > 0;
+    const showSeg = vis.has("segments") && m.segments.length > 0;
     this._sgm.hidden = !showSeg;
     if (showSeg) {
       const segKey = JSON.stringify(m.segments.map((s) => [s.entity, s.name, s.icon]));
@@ -737,7 +892,7 @@ class GoveeUplighterCard extends HTMLElement {
     }
 
     // scenes
-    const showScn = cfg.show_scenes !== false && m.hasScene;
+    const showScn = vis.has("scenes") && m.hasScene;
     this._scn.hidden = !showScn;
     if (showScn) {
       const labels = !!cfg.show_scene_labels;
@@ -771,7 +926,7 @@ class GoveeUplighterCard extends HTMLElement {
     }
 
     // music mode
-    const showMus = cfg.show_music !== false && m.music.has;
+    const showMus = vis.has("music") && m.music.has;
     this._mus.hidden = !showMus;
     if (showMus) {
       const mu = m.music;
@@ -800,12 +955,6 @@ const EDITOR_LABELS = {
   entity: "Light entity",
   name: "Name",
   icon: "Icon",
-  show_header: "Show header (icon, name, power button)",
-  show_brightness: "Show brightness slider",
-  show_color: "Show colors and white temperature",
-  show_segments: "Show light segments",
-  show_scenes: "Show scenes",
-  show_music: "Show music mode",
   tap_action: "Header tap action",
   scene_entity: "Scene select (auto-detected)",
   music_switch: "Music mode switch (auto-detected)",
@@ -816,6 +965,7 @@ const EDITOR_LABELS = {
   show_scene_select: "Show list of all scenes",
   show_scene_labels: "Show names under scene icons",
   show_scene_in_header: "Show current scene in the header",
+  scene_accent: "Tint the card with the active scene's color (from the color map)",
   show_color_picker: "Show custom color picker",
   card_style: "Card style (icon, icon box and borders)",
   color: "Accent color override (e.g. #2196f3)",
@@ -829,16 +979,11 @@ const EDITOR_LABELS = {
 };
 
 const EDITOR_DEFAULTS = {
-  show_header: true,
-  show_brightness: true,
-  show_color: true,
-  show_segments: true,
-  show_scenes: true,
-  show_music: true,
   show_random: true,
   show_scene_select: true,
   show_scene_labels: false,
   show_scene_in_header: false,
+  scene_accent: false,
   show_color_picker: true,
   card_style: "mushroom",
   animation: true,
@@ -854,17 +999,13 @@ const getTopSchema = () => [
   { name: "entity", required: true, selector: { entity: { domain: "light" } } },
   { name: "name", selector: { text: {} } },
   { name: "icon", selector: { icon: {} } },
-  { name: "show_header", selector: { boolean: {} } },
-  { name: "show_brightness", selector: { boolean: {} } },
-  { name: "show_color", selector: { boolean: {} } },
-  { name: "show_segments", selector: { boolean: {} } },
-  { name: "show_scenes", selector: { boolean: {} } },
-  { name: "show_music", selector: { boolean: {} } },
 ];
 
-const getBottomSchema = (cfg) => [
-  ...(cfg.show_header !== false ? [{ name: "tap_action", selector: { ui_action: {} } }] : []),
-  ...(cfg.show_scenes !== false
+const getBottomSchema = (cfg) => {
+  const vis = resolveSections(cfg);
+  return [
+  ...(vis.includes("header") ? [{ name: "tap_action", selector: { ui_action: {} } }] : []),
+  ...(vis.includes("scenes")
     ? [
         {
           type: "expandable",
@@ -904,13 +1045,15 @@ const getBottomSchema = (cfg) => [
       },
       { name: "color", selector: { text: {} } },
       { name: "show_scene_in_header", selector: { boolean: {} } },
+      { name: "scene_accent", selector: { boolean: {} } },
       { name: "show_color_picker", selector: { boolean: {} } },
       { name: "animation", selector: { boolean: {} } },
       { name: "coloring", selector: { boolean: {} } },
       { name: "icon_coloring", selector: { boolean: {} } },
     ],
   },
-];
+  ];
+};
 
 const isEmpty = (v) =>
   v === "" || v == null || (Array.isArray(v) && v.length === 0) ||
@@ -940,6 +1083,11 @@ const EDITOR_CSS = `
   .gu-body { padding: 12px; border-top: 1px solid var(--divider-color); }
   .gu-add { all: unset; box-sizing: border-box; cursor: pointer; width: 100%; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 10px; border: 1px dashed var(--divider-color); border-radius: 12px; color: var(--primary-color); font-size: 14px; font-weight: 500; --mdc-icon-size: 20px; }
   .gu-add:hover { background: var(--secondary-background-color); }
+  .gu-tgl { all: unset; box-sizing: border-box; cursor: pointer; flex: none; position: relative; width: 38px; height: 22px; border-radius: 11px; margin: 0 8px 0 4px; background: var(--disabled-color, #bdbdbd); transition: background .2s; }
+  .gu-tgl::after { content: ""; position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; border-radius: 50%; background: #fff; transition: transform .2s; box-shadow: 0 1px 3px rgba(0,0,0,.35); }
+  .gu-tgl.on { background: var(--primary-color); }
+  .gu-tgl.on::after { transform: translateX(16px); }
+  .gu-row.hidden-sec .t, .gu-row.hidden-sec > .gu-rh > ha-icon { opacity: .55; }
   .gu-empty { font-size: 13px; color: var(--secondary-text-color); margin-bottom: 8px; }
 `;
 
@@ -1065,6 +1213,64 @@ class ListEditor {
   }
 }
 
+// Rows to show/hide and reorder the card's sections.
+class SectionsEditor {
+  constructor(host, commit) {
+    this.commit = commit;
+    this.wrap = document.createElement("div");
+    this.wrap.className = "gu-list";
+    host.appendChild(this.wrap);
+  }
+
+  update(list, custom) {
+    const wrap = this.wrap;
+    wrap.innerHTML = "";
+    const head = document.createElement("div");
+    head.className = "gu-h";
+    const t = document.createElement("span");
+    t.textContent = "Sections";
+    head.appendChild(t);
+    if (custom) {
+      const reset = document.createElement("button");
+      reset.className = "gu-reset";
+      reset.textContent = "Reset to default";
+      reset.addEventListener("click", () => this.commit(null));
+      head.appendChild(reset);
+    }
+    wrap.appendChild(head);
+    list.forEach((it, i) => {
+      const meta = SECTION_META[it.id];
+      const row = document.createElement("div");
+      row.className = "gu-row" + (it.show ? "" : " hidden-sec");
+      const rh = document.createElement("div");
+      rh.className = "gu-rh";
+      rh.style.cursor = "default";
+      rh.innerHTML = `
+        <ha-icon icon="${meta.icon}"></ha-icon>
+        <div class="t"><div class="n"></div><div class="s"></div></div>
+        <button class="gu-ib" data-a="up" title="Move up" ${i === 0 ? "disabled" : ""}><ha-icon icon="mdi:arrow-up"></ha-icon></button>
+        <button class="gu-ib" data-a="down" title="Move down" ${i === list.length - 1 ? "disabled" : ""}><ha-icon icon="mdi:arrow-down"></ha-icon></button>
+        <button class="gu-tgl${it.show ? " on" : ""}" data-a="tgl" role="switch" aria-checked="${it.show}" title="${it.show ? "Hide" : "Show"}"></button>`;
+      rh.querySelector(".n").textContent = meta.label;
+      rh.querySelector(".s").textContent = it.show ? "Shown" : "Hidden";
+      rh.addEventListener("click", (e) => {
+        const a = e.target.closest("[data-a]")?.dataset.a;
+        if (!a) return;
+        const cur = list.map((x) => ({ ...x }));
+        if (a === "tgl") cur[i].show = !cur[i].show;
+        else {
+          const j = a === "up" ? i - 1 : i + 1;
+          if (j < 0 || j >= cur.length) return;
+          [cur[i], cur[j]] = [cur[j], cur[i]];
+        }
+        this.commit(cur);
+      });
+      row.appendChild(rh);
+      wrap.appendChild(row);
+    });
+  }
+}
+
 class GoveeUplighterCardEditor extends HTMLElement {
   setConfig(config) {
     this._config = config;
@@ -1124,6 +1330,15 @@ class GoveeUplighterCardEditor extends HTMLElement {
     this._top = this._makeForm(getTopSchema(), onFormChange(() => getTopSchema()));
     this.appendChild(this._top);
 
+    // sections: show / hide / reorder
+    this._sections = new SectionsEditor(this, (list) => {
+      const c = { ...this._config };
+      for (const id of SECTION_IDS) delete c[`show_${id}`];
+      if (list === null) delete c.sections;
+      else c.sections = list.map((x) => (x.show ? x.id : { id: x.id, show: false }));
+      this._emit(c);
+    });
+
     // colors
     this._colors = new ListEditor(this, {
       title: "Colors",
@@ -1164,11 +1379,12 @@ class GoveeUplighterCardEditor extends HTMLElement {
     });
 
     // scenes
+    const mapRgb = (option) => SCENE_COLORS[baseName(option)] || null;
     this._scenes = new ListEditor(this, {
       title: "Quick scenes",
       empty: "No quick scenes. Add one below.",
       addText: "Add scene",
-      labels: { option: "Scene", name: "Name (default: scene)", icon: "Icon", color: "Highlight color" },
+      labels: { option: "Scene", name: "Name (default: scene)", icon: "Icon", color: "Highlight color (default: from color map)" },
       schema: () => {
         const id = this._config.scene_entity || discover(this._hass, this._config.entity || "").scene;
         const options = (id && this._hass?.states?.[id]?.attributes?.options) || [];
@@ -1179,12 +1395,20 @@ class GoveeUplighterCardEditor extends HTMLElement {
           { name: "color", selector: { color_rgb: {} } },
         ];
       },
-      head: (s) => {
-        const rgb = toRgb(s.color);
-        return { icon: s.icon || "mdi:palette", name: s.name || s.option || "New scene", sub: s.option && s.name ? s.option : rgb ? `rgb(${rgb})` : "" };
+      head: (sc) => {
+        const custom = toRgb(sc.color);
+        const sub = custom ? "Custom color" : mapRgb(sc.option) ? "Color from map" : "";
+        return { icon: sc.icon || "mdi:palette", name: sc.name || sc.option || "New scene", sub: sc.option && sc.name ? `${sc.option}${sub ? " · " + sub : ""}` : sub };
       },
-      toForm: (s) => ({ ...s, color: s.color != null ? (toRgb(s.color) || "").split(",").map(Number) : undefined }),
-      fromForm: (v) => ({ ...v, color: Array.isArray(v.color) && v.color.length === 3 ? v.color : undefined }),
+      // the form shows the effective color, but a color equal to the map's is not written
+      toForm: (sc) => {
+        const rgb = toRgb(sc.color) || mapRgb(sc.option);
+        return { ...sc, color: rgb ? rgb.split(",").map(Number) : undefined };
+      },
+      fromForm: (v) => {
+        const rgb = Array.isArray(v.color) && v.color.length === 3 ? v.color.join(",") : null;
+        return { ...v, color: rgb && rgb !== mapRgb(v.option) ? v.color : undefined };
+      },
       newItem: () => ({ icon: "mdi:palette" }),
       commit: this._commitList("scenes"),
     });
@@ -1201,7 +1425,8 @@ class GoveeUplighterCardEditor extends HTMLElement {
     const data = { ...EDITOR_DEFAULTS, ...cfg };
     this._top.data = data;
 
-    const schemaKey = JSON.stringify([cfg.show_header !== false, cfg.show_scenes !== false]);
+    const vis = resolveSections(cfg);
+    const schemaKey = JSON.stringify([vis.includes("header"), vis.includes("scenes")]);
     if (schemaKey !== this._schemaKey) {
       this._schemaKey = schemaKey;
       this._bottom.schema = getBottomSchema(cfg);
@@ -1209,9 +1434,10 @@ class GoveeUplighterCardEditor extends HTMLElement {
     this._bottom.data = data;
 
     // list editors
-    this._colors.wrap.hidden = cfg.show_color === false;
-    this._segments.wrap.hidden = cfg.show_segments === false;
-    this._scenes.wrap.hidden = cfg.show_scenes === false;
+    this._sections.update(effectiveSections(cfg), Array.isArray(cfg.sections));
+    this._colors.wrap.hidden = !vis.includes("color");
+    this._segments.wrap.hidden = !vis.includes("segments");
+    this._scenes.wrap.hidden = !vis.includes("scenes");
     const d = discover(this._hass, cfg.entity || "");
     this._colors.update(Array.isArray(cfg.colors) ? cfg.colors : DEFAULT_COLORS, Array.isArray(cfg.colors), this._hass);
     this._segments.update(
